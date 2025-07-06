@@ -20,7 +20,7 @@ This plugin displays your Dexcom glucose readings directly in your macOS menu ba
 - Open xbar. It will appear in your menu bar.
 
 ### 3. Download the Plugin
-- Download the `dexcom.5m.py` file from this repository. [click here to download](https://github.com/mattanmr/xbar_plugins/blob/e5e64668d10a4b59276730348c159683a3c62a55/dexcom.5m.py)
+- Download the `dexcom.5m.py` file from this repository. [click here to download](<https://github.com/mattanmr/xbar_plugins/blob/e5e64668d10a4b59276730348c159683a3c62a55/dexcom.5m.py>)
 - Place the file in your xbar plugins folder:
   - In xbar, click the menu bar icon > Preferences > Open Plugins Folder.
   - Move `dexcom.5m.py` into this folder.
