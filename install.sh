@@ -6,8 +6,13 @@ set -e
 
 # 1. Check for Python 3
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "Python 3 is not installed. Please install it from https://www.python.org/downloads/ and re-run this script."
-  exit 1
+  echo "Python 3 is not installed. Attempting to install via Homebrew..."
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew is not installed. Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$($(brew --prefix)/bin/brew shellenv)"
+  fi
+  brew install python
 fi
 
 # 2. Install pip if missing
@@ -29,19 +34,29 @@ if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
   exit 1
 fi
 
-# 5. Find xbar plugins folder
+# 5. Start xbar if not running
+if ! pgrep -x "xbar" >/dev/null; then
+  echo "Starting xbar..."
+  open -a xbar
+  sleep 2
+fi
+
+# 6. Find xbar plugins folder
 PLUGINS_DIR=$(osascript -e 'tell application "xbar" to POSIX path of (get plugins folder)')
 if [ ! -d "$PLUGINS_DIR" ]; then
   echo "Could not find xbar plugins folder. Please open xbar, then try again."
   exit 1
 fi
 
-# 6. Copy plugin file
+# 7. Copy plugin file
 cp dexcom.5m.py "$PLUGINS_DIR/"
 echo "Plugin copied to xbar plugins folder."
 
-# 7. Open plugins folder for user
+# 8. Open plugins folder for user
 open "$PLUGINS_DIR"
+
+# 9. Try to open plugin configuration (if possible)
+# Note: xbar does not have a public AppleScript API for opening plugin config, so we provide clear instructions
 
 echo "\nSetup complete!"
 echo "- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', and enter your Dexcom credentials."
