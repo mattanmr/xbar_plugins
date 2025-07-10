@@ -4,17 +4,32 @@ This plugin displays your Dexcom glucose readings directly in your macOS menu ba
 
 ---
 
-## Disclaimer
+## Quick Start: Easy Installation (Recommended)
 
-This software is provided "as is" and is intended for informational and convenience purposes only. It is not intended to replace professional medical advice, diagnosis, or counseling. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Use of this program is at your own risk.
+The fastest way to get set up is to use the included `install.sh` script, which automates the installation of Python dependencies and places the plugin in your xbar plugins folder.
 
-## No Liability
+### 1. Download and Run the Installer
 
-The authors and contributors of this software accept no responsibility or liability for any effects, behaviors, damages, or other issues that may arise from the use or misuse of this software. By using this program, you agree that you do so at your own risk and that you assume full responsibility for any consequences.
+- Download or clone this repository.
+- Open **Terminal** and navigate to the directory where you downloaded/cloned the repo.
+- Run:
+  ```sh
+  ./install.sh
+  ```
+- Follow the prompts to complete installation.
+
+**Note:** If you see a permissions error, you may need to make the script executable first:
+```sh
+chmod +x install.sh
+./install.sh
+```
+After the script completes, follow any additional instructions shown in the terminal (such as configuring your Dexcom credentials).
 
 ---
 
-## Step-by-Step Setup Instructions
+## Manual Installation
+
+If you prefer to install manually or want more control, follow these steps:
 
 ### 1. Install Python (if you don't have it)
 - Open **Terminal** (find it in Applications > Utilities).
@@ -58,7 +73,7 @@ The authors and contributors of this software accept no responsibility or liabil
 
 ## Uninstalling
 - In xbar, open the plugin browser, find the Dexcom Glucose Reader plugin, and click **Uninstall this plugin**.
-- Alternatively, you can delete `dexcom.5m.py` (and any json files contining `dexcom.5m` in the filename) from your xbar plugins folder and restart xbar.
+- Alternatively, you can delete `dexcom.5m.py` (and any json files containing `dexcom.5m` in the filename) from your xbar plugins folder and restart xbar.
 
 ---
 
