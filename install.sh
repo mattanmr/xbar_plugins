@@ -26,12 +26,17 @@ fi
 # 3. Install required Python packages
 python3 -m pip install --user --upgrade pydexcom sparklines
 
-# 4. Check for xbar
+# 4. Check for xbar and install if missing
 if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
-  echo "xbar is not installed. Opening xbar download page..."
-  open "https://xbarapp.com/"
-  echo "Please install xbar, then re-run this script."
-  exit 1
+  echo "xbar is not installed. Downloading and installing xbar..."
+  XBAR_URL="https://github.com/matryer/xbar/releases/latest/download/xbar.zip"
+  TMP_DIR=$(mktemp -d)
+  curl -L "$XBAR_URL" -o "$TMP_DIR/xbar.zip"
+  unzip -q "$TMP_DIR/xbar.zip" -d "$TMP_DIR"
+  echo "Moving xbar to /Applications (may require your password)..."
+  mv "$TMP_DIR/xbar.app" /Applications/
+  rm -rf "$TMP_DIR"
+  echo "xbar installed."
 fi
 
 # 5. Start xbar if not running
