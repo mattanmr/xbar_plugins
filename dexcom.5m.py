@@ -12,6 +12,11 @@
 # <xbar.var>select(REGION="outside USA"): Where your Dexcom server is [in USA, outside USA, Japan]</xbar.var>
 # <xbar.var>boolean(VAR_VERBOSE=false): Display attributes data?</xbar.var>
 
+# DISCLAIMER:
+# This software is provided "as is" for informational and convenience purposes only.
+# It is not intended to replace professional medical advice, diagnosis, or counseling.
+# Use at your own risk. The authors accept no liability for any consequences of use or misuse.
+
 import os
 from pydexcom import Dexcom
 from sparklines import sparklines
