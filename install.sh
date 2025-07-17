@@ -4,20 +4,16 @@
 
 set -e
 
-# check for xcode
-#!/bin/zsh
-echo "Checking Command Line Tools for Xcode"
-# Only run if the tools are not installed yet
-# To check that try to print the SDK path
-xcode-select -p &> /dev/null
-if [ $? -ne 0 ]; then
-  echo "Command Line Tools for Xcode not found. Installing from softwareupdate…"
-# This temporary file prompts the 'softwareupdate' utility to list the Command Line Tools
-  touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
-  PROD=$(softwareupdate -l | grep "\*.*Command Line" | tail -n 1 | sed 's/^[^C]* //')
-  softwareupdate -i "$PROD" --verbose;
-else
-  echo "Command Line Tools for Xcode have been installed."
+# 0. check for xcode
+if ! xcode-select -p 1>/dev/null 2>&1; then
+  tmp_file=/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+  touch "$tmp_file"
+  label=$(softwareupdate -l | grep -B 1 -E 'Command Line Tools' | awk -F'*' '/^ *\\*/ {print $2}' | sed -e 's/^ *Label: //' -e 's/^ *//' | sort -V | tail -n1)
+  # $label is like 'Command Line Tools for Xcode-16.0'
+  if [ -n "$label" ]; then
+    softwareupdate -i "$label"
+  fi
+  rm -f "$tmp_file"
 fi
 
 # 1. Check for Python 3
