@@ -4,6 +4,22 @@
 
 set -e
 
+# check for xcode
+#!/bin/zsh
+echo "Checking Command Line Tools for Xcode"
+# Only run if the tools are not installed yet
+# To check that try to print the SDK path
+xcode-select -p &> /dev/null
+if [ $? -ne 0 ]; then
+  echo "Command Line Tools for Xcode not found. Installing from softwareupdate…"
+# This temporary file prompts the 'softwareupdate' utility to list the Command Line Tools
+  touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
+  PROD=$(softwareupdate -l | grep "\*.*Command Line" | tail -n 1 | sed 's/^[^C]* //')
+  softwareupdate -i "$PROD" --verbose;
+else
+  echo "Command Line Tools for Xcode have been installed."
+fi
+
 # 1. Check for Python 3
 if ! command -v python3 >/dev/null 2>&1; then
   echo "Python 3 is not installed. Attempting to install via Homebrew..."
@@ -11,6 +27,8 @@ if ! command -v python3 >/dev/null 2>&1; then
     echo "Homebrew is not installed. Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     eval "$($(brew --prefix)/bin/brew shellenv)"
+    echo "Adding Homebrew to PATH"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
   fi
   brew install python
 fi
@@ -29,12 +47,13 @@ python3 -m pip install --user --upgrade pydexcom sparklines
 # 4. Check for xbar and install if missing
 if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
   echo "xbar is not installed. Downloading and installing xbar..."
-  XBAR_URL="https://github.com/matryer/xbar/releases/latest/download/xbar.zip"
+  XBAR_URL="https://github.com/matryer/xbar/releases/download/v2.1.7-beta/xbar.v2.1.7-beta.dmg"
   TMP_DIR=$(mktemp -d)
-  curl -L "$XBAR_URL" -o "$TMP_DIR/xbar.zip"
-  unzip -q "$TMP_DIR/xbar.zip" -d "$TMP_DIR"
-  echo "Moving xbar to /Applications (may require your password)..."
-  mv "$TMP_DIR/xbar.app" /Applications/
+  curl -L "$XBAR_URL" -o "$TMP_DIR/xbar.dmg"
+  hdiutil attach "$TMP_DIR/xbar.dmg"
+  cp -r "/Volumes/Install xbar/xbar.app" /Applications/
+  #sudo installer -package /Volumes/xbar/xbar.pkg -target /Applications
+  hdiutil detach "/Volumes/Install xbar"
   rm -rf "$TMP_DIR"
   echo "xbar installed."
 fi
@@ -47,7 +66,8 @@ if ! pgrep -x "xbar" >/dev/null; then
 fi
 
 # 6. Find xbar plugins folder
-PLUGINS_DIR=$(osascript -e 'tell application "xbar" to POSIX path of (get plugins folder)')
+#PLUGINS_DIR=$(osascript -e 'tell application "xbar" to POSIX path of (get plugins folder)')
+PLUGINS_DIR="$HOME/Library/Application Support/xbar/plugins"
 if [ ! -d "$PLUGINS_DIR" ]; then
   echo "Could not find xbar plugins folder. Please open xbar, then try again."
   exit 1
