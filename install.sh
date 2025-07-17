@@ -62,8 +62,7 @@ if ! pgrep -x "xbar" >/dev/null; then
 fi
 
 # 6. Find xbar plugins folder
-#PLUGINS_DIR=$(osascript -e 'tell application "xbar" to POSIX path of (get plugins folder)')
-PLUGINS_DIR="$HOME/Library/Application Support/xbar/plugins"
+PLUGINS_DIR=$HOME/Library/Application\ Support/xbar/plugins
 if [ ! -d "$PLUGINS_DIR" ]; then
   echo "Could not find xbar plugins folder. Please open xbar, then try again."
   exit 1
