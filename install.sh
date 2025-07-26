@@ -54,11 +54,20 @@ if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
   echo "xbar installed."
 fi
 
+result=$(osascript -e 'display alert "Please allow xbar to control system events" message "If popup appears, please choose '"'Allow'"' xbar to control system events" buttons {"OK", "Cancel"} default button "OK" cancel button "Cancel"')
+
+if [[ "$result" == "button returned:OK" ]]; then
+    echo "User chose OK"
+elif [[ "$result" == "button returned:Cancel" ]]; then
+    echo "User chose Cancel"
+fi
+
+
 # 5. Start xbar if not running
 if ! pgrep -x "xbar" >/dev/null; then
   echo "Starting xbar..."
   open -a xbar
-  sleep 2
+  sleep 20
 fi
 
 # 6. Find xbar plugins folder
@@ -79,5 +88,6 @@ open "$PLUGINS_DIR"
 # Note: xbar does not have a public AppleScript API for opening plugin config, so we provide clear instructions
 
 echo "\nSetup complete!"
+echo "Please refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option."
 echo "- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', and enter your Dexcom credentials."
 echo "- If you have any issues, see the README for troubleshooting."
