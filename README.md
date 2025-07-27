@@ -33,7 +33,8 @@ The fastest way to get set up is to use the included `install.sh` script, which 
 chmod +x install.sh
 ./install.sh
 ```
-After the script completes, follow any additional instructions shown in the terminal (such as configuring your Dexcom credentials).
+
+After the script completes, final setup instructions will appear in a popup dialog. Follow those instructions to finish configuring your Dexcom plugin.
 
 ---
 
