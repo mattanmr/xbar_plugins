@@ -1,4 +1,4 @@
-# Dexcom Glucose Reader for xbar
+# Dexcom Glucose Reader for macOS menu bar
 
 This plugin displays your Dexcom glucose readings directly in your macOS menu bar using [xbar](https://xbarapp.com/).
 
