@@ -119,9 +119,8 @@ open "$PLUGINS_DIR"
 open -a /Applications/xbar.app
 
 # -----------------------------
-# 11. Final instructions
+# 11. Final instructions (popup)
 # -----------------------------
-echo "\nSetup complete!"
-echo "Please refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option."
-echo "- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', and enter your Dexcom credentials."
-echo "- If you have any issues, see the README for troubleshooting."
+osascript <<EOD
+  display dialog "Setup complete!\n\nPlease refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option.\n\n- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', and enter your Dexcom credentials.\n- If you have any issues, see the README for troubleshooting." with title "Dexcom xbar Plugin Installer" buttons {"OK"} default button "OK"
+EOD
