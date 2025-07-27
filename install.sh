@@ -40,6 +40,15 @@ fi
 # 3. Install required Python packages
 python3 -m pip install --user --upgrade pydexcom sparklines
 
+result=$(osascript -e 'display alert "Please allow xbar to control system events" message "If popup appears, please choose '"'Allow'"' xbar to control system events" buttons {"OK", "Cancel"} default button "OK" cancel button "Cancel"')
+
+if [[ "$result" == "button returned:OK" ]]; then
+    echo "User chose OK"
+elif [[ "$result" == "button returned:Cancel" ]]; then
+    echo "User chose Cancel"
+fi
+
+
 # 4. Check for xbar and install if missing
 if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
   echo "xbar is not installed. Downloading and installing xbar..."
@@ -54,25 +63,29 @@ if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
   echo "xbar installed."
 fi
 
-result=$(osascript -e 'display alert "Please allow xbar to control system events" message "If popup appears, please choose '"'Allow'"' xbar to control system events" buttons {"OK", "Cancel"} default button "OK" cancel button "Cancel"')
-
-if [[ "$result" == "button returned:OK" ]]; then
-    echo "User chose OK"
-elif [[ "$result" == "button returned:Cancel" ]]; then
-    echo "User chose Cancel"
-fi
-
+echo "xbar is installed. sleeping for 5 seconds..."
+sleep 5
+echo "done sleeping."
 
 # 5. Start xbar if not running
 if ! pgrep -x "xbar" >/dev/null; then
   echo "Starting xbar..."
   open -a xbar
-  sleep 20
+  sleep 2
+  #killall "xbar" || true  # Ensure xbar is not running before copying the plugin
 fi
 
 # 6. Find xbar plugins folder
 PLUGINS_DIR=$HOME/Library/Application\ Support/xbar/plugins
 if [ ! -d "$PLUGINS_DIR" ]; then
+    # if the plugins folder does not exist, let's create it
+  mkdir -p "$PLUGINS_DIR"
+  echo "Created xbar plugins folder at $PLUGINS_DIR"
+else
+  echo "Found xbar plugins folder at $PLUGINS_DIR"
+fi
+if [ ! -d "$PLUGINS_DIR" ]; then
+  # if the plugins folder still does not exist, we cannot continue
   echo "Could not find xbar plugins folder. Please open xbar, then try again."
   exit 1
 fi
@@ -80,12 +93,17 @@ fi
 # 7. Copy plugin file
 cp dexcom.5m.py "$PLUGINS_DIR/"
 echo "Plugin copied to xbar plugins folder."
+# now make the plugin executable
+chmod +x "$PLUGINS_DIR/dexcom.5m.py"
 
 # 8. Open plugins folder for user
 open "$PLUGINS_DIR"
 
 # 9. Try to open plugin configuration (if possible)
 # Note: xbar does not have a public AppleScript API for opening plugin config, so we provide clear instructions
+
+# 10. Open xbar app
+open -a xbar
 
 echo "\nSetup complete!"
 echo "Please refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option."
