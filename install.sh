@@ -3,6 +3,7 @@
 # This script helps new users set up the plugin on macOS.
 
 set -e
+set -x  # Enable debug output
 
 # 0. check for xcode
 if ! xcode-select -p 1>/dev/null 2>&1; then
@@ -48,19 +49,20 @@ elif [[ "$result" == "button returned:Cancel" ]]; then
     echo "User chose Cancel"
 fi
 
-
 # 4. Check for xbar and install if missing
-if ! ls /Applications | grep -i xbar >/dev/null 2>&1; then
+XBAR_APP_PATH="/Applications/xbar.app"
+if [ ! -d "$XBAR_APP_PATH" ]; then
   echo "xbar is not installed. Downloading and installing xbar..."
   XBAR_URL="https://github.com/matryer/xbar/releases/download/v2.1.7-beta/xbar.v2.1.7-beta.dmg"
   TMP_DIR=$(mktemp -d)
   curl -L "$XBAR_URL" -o "$TMP_DIR/xbar.dmg"
   hdiutil attach "$TMP_DIR/xbar.dmg"
   cp -r "/Volumes/Install xbar/xbar.app" /Applications/
-  #sudo installer -package /Volumes/xbar/xbar.pkg -target /Applications
   hdiutil detach "/Volumes/Install xbar"
   rm -rf "$TMP_DIR"
   echo "xbar installed."
+else
+  echo "xbar is already installed at $XBAR_APP_PATH"
 fi
 
 echo "xbar is installed. sleeping for 5 seconds..."
@@ -70,30 +72,27 @@ echo "done sleeping."
 # 5. Start xbar if not running
 if ! pgrep -x "xbar" >/dev/null; then
   echo "Starting xbar..."
-  open -a xbar
+  open -a /Applications/xbar.app
   sleep 2
-  #killall "xbar" || true  # Ensure xbar is not running before copying the plugin
 fi
 
-# 6. Find xbar plugins folder
-PLUGINS_DIR=$HOME/Library/Application\ Support/xbar/plugins
+# 6. Find xbar plugins folder (move this up to ensure it exists before plugin copy)
+PLUGINS_DIR="$HOME/Library/Application Support/xbar/plugins"
+echo "Checking for plugins directory: $PLUGINS_DIR"
 if [ ! -d "$PLUGINS_DIR" ]; then
-    # if the plugins folder does not exist, let's create it
-  mkdir -p "$PLUGINS_DIR"
-  echo "Created xbar plugins folder at $PLUGINS_DIR"
+    mkdir -p "$PLUGINS_DIR"
+    echo "Created xbar plugins folder at $PLUGINS_DIR"
 else
-  echo "Found xbar plugins folder at $PLUGINS_DIR"
+    echo "Found xbar plugins folder at $PLUGINS_DIR"
 fi
 if [ ! -d "$PLUGINS_DIR" ]; then
-  # if the plugins folder still does not exist, we cannot continue
-  echo "Could not find xbar plugins folder. Please open xbar, then try again."
-  exit 1
+    echo "Could not find or create xbar plugins folder. Please open xbar, then try again."
+    exit 1
 fi
 
 # 7. Copy plugin file
 cp dexcom.5m.py "$PLUGINS_DIR/"
 echo "Plugin copied to xbar plugins folder."
-# now make the plugin executable
 chmod +x "$PLUGINS_DIR/dexcom.5m.py"
 
 # 8. Open plugins folder for user
@@ -103,7 +102,7 @@ open "$PLUGINS_DIR"
 # Note: xbar does not have a public AppleScript API for opening plugin config, so we provide clear instructions
 
 # 10. Open xbar app
-open -a xbar
+open -a /Applications/xbar.app
 
 echo "\nSetup complete!"
 echo "Please refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option."
