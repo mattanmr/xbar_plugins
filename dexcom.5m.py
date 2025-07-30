@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/local/bin/python3
+#!/usr/bin/python3
 #
 # <xbar.title>Dexcom Glucose Reader</xbar.title>
 # <xbar.version>v1.0</xbar.version>
