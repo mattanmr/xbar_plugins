@@ -4,6 +4,17 @@ This plugin displays your Dexcom glucose readings directly in your macOS menu ba
 
 ---
 
+## Disclaimer
+
+This software is provided "as is" and is intended for informational and convenience purposes only. It is not intended to replace professional medical advice, diagnosis, or counseling. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Use of this program is at your own risk.
+Copy and paste the following command into your Terminal to download all necessary files and run the installer:
+
+## No Liability
+
+The authors and contributors of this software accept no responsibility or liability for any effects, behaviors, damages, or other issues that may arise from the use or misuse of this software. By using this program, you agree that you do so at your own risk and that you assume full responsibility for any consequences.
+
+---
+
 ## Quick Start: One-Line Installation (Recommended)
 
 Copy and paste the following command into your Terminal to download all necessary files and run the installer:
