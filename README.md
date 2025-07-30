@@ -10,8 +10,7 @@ Copy and paste the following command into your Terminal to download all necessar
 
 ```sh
 curl -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/install.sh \
-     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom.5m.py \
-     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_reader.png && \
+     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom.5m.py && \
 chmod +x install.sh && \
 ./install.sh
 ```
