@@ -3,6 +3,7 @@
 # <xbar.title>Dexcom Glucose Reader</xbar.title>
 # <xbar.version>v1.0</xbar.version>
 # <xbar.author>Mattan Ram</xbar.author>
+# <xbar.desc>DISCLAIMER: This software is provided "as is" for informational and convenience purposes only. It is not intended to replace professional medical advice, diagnosis, or counseling. Use at your own risk. The authors accept no liability for any consequences of use or misuse.</xbar.desc>
 # <xbar.image>https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_reader.png</xbar.image>
 
 # <xbar.var>string(PASSWORD=""): Your dexcom account password </xbar.var>
