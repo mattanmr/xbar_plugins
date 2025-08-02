@@ -102,11 +102,12 @@ if [ ! -d "$PLUGINS_DIR" ]; then
 fi
 
 # -----------------------------
-# 8. Copy plugin file
+# 8. Copy plugin file and update script
 # -----------------------------
 cp dexcom.5m.py "$PLUGINS_DIR/"
-echo "Plugin copied to xbar plugins folder."
-chmod +x "$PLUGINS_DIR/dexcom.5m.py"
+cp update.sh "$PLUGINS_DIR/"
+echo "Plugin and update script copied to xbar plugins folder."
+chmod +x "$PLUGINS_DIR/dexcom.5m.py" "$PLUGINS_DIR/update.sh"
 
 # -----------------------------
 # 9. Open plugins folder for user

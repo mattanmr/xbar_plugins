@@ -20,12 +20,20 @@ Copy and paste the following command into your Terminal to download all necessar
 
 ```sh
 curl -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/install.sh \
-     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom.5m.py && \
-chmod +x install.sh && \
+     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom.5m.py \
+     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/update.sh && \
+chmod +x install.sh update.sh && \
 ./install.sh
 ```
 
 After the script completes, follow the popup instructions to finish configuring your Dexcom plugin.
+
+---
+
+## Update Feature
+- The plugin will automatically check for updates from the main branch.
+- If a new version is available, you will see an "Update Available" option in the xbar menu.
+- Click "Update Plugin" to update your local files using the included `update.sh` script.
 
 ---
 

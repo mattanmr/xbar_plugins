@@ -5,6 +5,8 @@
 # <xbar.author>Mattan Ram</xbar.author>
 # <xbar.desc>DISCLAIMER: This software is provided "as is" for informational and convenience purposes only. It is not intended to replace professional medical advice, diagnosis, or counseling. Use at your own risk. The authors accept no liability for any consequences of use or misuse.</xbar.desc>
 # <xbar.image>https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_reader.png</xbar.image>
+# <xbar.plugin_version>1.0.0</xbar.plugin_version>
+# <xbar.version_file>VERSION</xbar.version_file>
 
 # <xbar.var>string(PASSWORD=""): Your dexcom account password </xbar.var>
 # <xbar.var>string(ID=""): Your dexcom account id </xbar.var>
@@ -21,6 +23,8 @@
 import os
 from pydexcom import Dexcom
 from sparklines import sparklines
+import urllib.request
+import subprocess
 
 region_dict = {
     "in USA": "us",
@@ -38,6 +42,28 @@ region: str = region_dict.get(env_region)
 verbose: bool = True if os.environ.get("VAR_VERBOSE") == "true" else False
 
 dexcom = Dexcom(account_id=account_id, password=user_password, region=region)
+
+PLUGIN_VERSION = "1.0.0"
+VERSION_FILE = os.path.join(os.path.dirname(__file__), "VERSION")
+REMOTE_VERSION_URL = "https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/VERSION"
+UPDATE_SCRIPT = os.path.join(os.path.dirname(__file__), "update.sh")
+
+# Check for updates
+try:
+    with open(VERSION_FILE) as f:
+        local_version = f.read().strip()
+except Exception:
+    local_version = PLUGIN_VERSION
+
+try:
+    remote_version = urllib.request.urlopen(REMOTE_VERSION_URL).read().decode("utf-8").strip()
+except Exception:
+    remote_version = local_version
+
+if remote_version != local_version:
+    print(f"Update Available: {remote_version}")
+    print(f"--Update Plugin | bash='{UPDATE_SCRIPT}' terminal=false refresh=true")
+    print("---")
 
 try:
     reading = dexcom.get_current_glucose_reading()
