@@ -7,7 +7,7 @@
 # <xbar.image>https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_reader.png</xbar.image>
 
 # <xbar.var>string(PASSWORD=""): Your dexcom account password </xbar.var>
-# <xbar.var>string(ID=""): Your dexcom account id </xbar.var>
+# <xbar.var>string(ID=""): Your dexcom account id (to find it, login to your clarity profile)</xbar.var>
 # <xbar.var>number(MINUTES=90): amount of history in minutes </xbar.var>
 # <xbar.var>number(GRAPH_POINTS=24): amount of points in the graph </xbar.var>
 # <xbar.var>select(REGION="outside USA"): Where your Dexcom server is [in USA, outside USA, Japan]</xbar.var>
