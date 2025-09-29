@@ -9,7 +9,7 @@
 # <xbar.version_file>VERSION</xbar.version_file>
 
 # <xbar.var>string(PASSWORD=""): Your dexcom account password </xbar.var>
-# <xbar.var>string(ID=""): Your dexcom account id </xbar.var>
+# <xbar.var>string(USERNAME=""): Your dexcom account username </xbar.var>
 # <xbar.var>number(MINUTES=90): amount of history in minutes </xbar.var>
 # <xbar.var>number(GRAPH_POINTS=24): amount of points in the graph </xbar.var>
 # <xbar.var>select(REGION="outside USA"): Where your Dexcom server is [in USA, outside USA, Japan]</xbar.var>
@@ -34,14 +34,14 @@ region_dict = {
 
 # Get environment variables
 user_password: str = os.environ.get("PASSWORD")
-account_id: str = os.environ.get("ID")
+username: str = os.environ.get("USERNAME")
 history_minutes: int = int(os.environ.get("MINUTES"))
 graph_points: int = int(os.environ.get("GRAPH_POINTS"))
 env_region: str = os.environ.get("REGION")
 region: str = region_dict.get(env_region)
 verbose: bool = True if os.environ.get("VAR_VERBOSE") == "true" else False
 
-dexcom = Dexcom(account_id=account_id, password=user_password, region=region)
+dexcom = Dexcom(username=username, password=user_password, region=region)
 
 PLUGIN_VERSION = "1.0.0"
 VERSION_FILE = os.path.join(os.path.dirname(__file__), "VERSION")
