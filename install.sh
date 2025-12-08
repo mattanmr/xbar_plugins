@@ -46,7 +46,24 @@ fi
 # -----------------------------
 # 3. Install required Python packages
 # -----------------------------
-python3 -m pip install --user --upgrade pydexcom sparklines
+python3 -m pip install --user --upgrade pydexcom
+
+# -----------------------------
+# 3b. Install gnuplot
+# -----------------------------
+if ! command -v gnuplot >/dev/null 2>&1; then
+  echo "gnuplot is not installed. Installing via Homebrew..."
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew is not installed. Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$($(brew --prefix)/bin/brew shellenv)"
+    echo "Adding Homebrew to PATH"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
+  brew install gnuplot
+else
+  echo "gnuplot is already installed"
+fi
 
 # -----------------------------
 # 4. Prompt for Accessibility Permissions
