@@ -142,28 +142,59 @@ class GlucoseDataHandler:
         """
     
     def generate_graph(self, values: list, output_file: str = '/tmp/dexcom_glucose_plot.png') -> str:
+        """
+        Generate glucose graph using gnuplot and return base64-encoded image.
+        
+        Args:
+            values: List of glucose values
+            output_file: Path for temporary output PNG
+            
+        Returns:
+            Base64-encoded PNG image data
+            
+        Raises:
+            RuntimeError: If gnuplot fails to generate the graph
+            FileNotFoundError: If gnuplot is not installed
+            OSError: If file operations fail
+        """
         data_file = None
         try:
             data_file = self.generate_glucose_data_file(values)
             gnuplot_cmd = self.generate_gnuplot_command(data_file, output_file, values)
             
-            # Run gnuplot
+            # Run gnuplot - will raise FileNotFoundError if gnuplot not installed
             result = subprocess.run(['gnuplot', '-e', gnuplot_cmd], 
                                   capture_output=True, 
-                                  text=True)
+                                  text=True,
+                                  timeout=5)  # Add timeout to prevent hanging
             
             if result.returncode != 0:
-                raise RuntimeError(f"gnuplot error: {result.stderr}")
+                raise RuntimeError(f"gnuplot returned error code {result.returncode}: {result.stderr}")
+            
+            # Verify output file was created
+            if not os.path.exists(output_file):
+                raise RuntimeError(f"gnuplot did not create output file: {output_file}")
             
             # Read and encode image
             with open(output_file, 'rb') as f:
-                return base64.b64encode(f.read()).decode('utf-8')
+                img_data = f.read()
+                if not img_data:
+                    raise RuntimeError("Generated image file is empty")
+                return base64.b64encode(img_data).decode('utf-8')
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("gnuplot command timed out after 5 seconds")
         finally:
-            # Clean up temp files
+            # Clean up temp files - ensure cleanup even if errors occur
             if data_file and os.path.exists(data_file):
-                os.unlink(data_file)
+                try:
+                    os.unlink(data_file)
+                except OSError:
+                    pass  # Ignore cleanup errors
             if os.path.exists(output_file):
-                os.unlink(output_file)
+                try:
+                    os.unlink(output_file)
+                except OSError:
+                    pass  # Ignore cleanup errors
 
 
 # ============================================================================
@@ -196,11 +227,13 @@ def main():
         img_base64 = None
         try:
             img_base64 = handler.generate_graph(values)
-        except RuntimeError as graph_error:
+        except Exception as graph_error:
             # If graph generation fails, we can still show the reading
+            # Catches: RuntimeError (gnuplot errors), FileNotFoundError (gnuplot not installed),
+            # OSError (file operations), and any other graph-related issues
             if verbose:
                 print(f"Warning: Graph generation failed: {str(graph_error)}")
-            # Continue without image
+            # Continue without image - graceful degradation
         
         # Output menu bar text
         time_str = handler.format_time(reading_time)
