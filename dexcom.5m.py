@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 # <xbar.title>Dexcom Glucose Reader</xbar.title>
-# <xbar.version>v1.1</xbar.version>
+# <xbar.version>v2.0</xbar.version>
 # <xbar.author>Mattan Ram</xbar.author>
 # <xbar.desc>DISCLAIMER: This software is provided "as is" for informational and convenience purposes only. It is not intended to replace professional medical advice, diagnosis, or counseling. Use at your own risk. The authors accept no liability for any consequences of use or misuse.</xbar.desc>
 # <xbar.image>https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_reader.png</xbar.image>
@@ -26,72 +26,132 @@ import os
 import subprocess
 import tempfile
 import base64
+import traceback
 from pydexcom import Dexcom
 
-region_dict = {
+# ============================================================================
+# CONSTANTS
+# ============================================================================
+
+REGION_MAP = {
     "in USA": "us",
     "outside USA": "ous",
     "Japan": "jp"
 }
 
+COLOR_THRESHOLDS = {
+    "low": 1,      # Blue
+    "normal": 2,   # Green
+    "high": 3      # Red
+}
+
+COLOR_PALETTE = "1 '#3b82f6', 2 '#22c55e', 3 '#ef4444'"  # Blue, Green, Red
+COLOR_NAMES = {
+    "low": "blue",
+    "normal": "green",
+    "high": "red"
+}
+
 # Add Homebrew paths so xbar can find gnuplot
 os.environ['PATH'] = '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:' + os.environ.get('PATH', '')
 
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
 # Get environment variables
-user_password: str = os.environ.get("PASSWORD")
-username: str = os.environ.get("USERNAME")
-history_minutes: int = int(os.environ.get("MINUTES"))
-graph_points: int = int(os.environ.get("GRAPH_POINTS"))
-high_threshold: int = int(os.environ.get("HIGH_THRESHOLD"))
-low_threshold: int = int(os.environ.get("LOW_THRESHOLD"))
-last_readings: int = int(os.environ.get("LAST_READINGS"))
-env_region: str = os.environ.get("REGION")
-region: str = region_dict.get(env_region)
-verbose: bool = True if os.environ.get("VAR_VERBOSE") == "true" else False
+user_password: str = os.environ.get("PASSWORD", "")
+username: str = os.environ.get("USERNAME", "")
+history_minutes: int = int(os.environ.get("MINUTES", 90))
+graph_points: int = int(os.environ.get("GRAPH_POINTS", 24))
+high_threshold: int = int(os.environ.get("HIGH_THRESHOLD", 130))
+low_threshold: int = int(os.environ.get("LOW_THRESHOLD", 75))
+last_readings: int = int(os.environ.get("LAST_READINGS", 4))
+env_region: str = os.environ.get("REGION", "outside USA")
+region: str = REGION_MAP.get(env_region, "ous")
+verbose: bool = os.environ.get("VAR_VERBOSE", "false").lower() == "true"
 
-dexcom = Dexcom(username=username, password=user_password, region=region)
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
 
-try:
-    reading = dexcom.get_current_glucose_reading()
-    value = reading.value
-    arrow = reading.trend_arrow
-    reading_time = reading.datetime
+
+def get_glucose_category(value: int, high: int, low: int) -> str:
+    """
+    Determine glucose level category based on thresholds.
     
-    readings = dexcom.get_glucose_readings(minutes=history_minutes)
-    values = [r.value for r in reversed(readings[:graph_points])]  # limit to points
-    
-    # Determine current value color
-    if value >= high_threshold:
-        current_color = "red"
-    elif value <= low_threshold:
-        current_color = "blue"
+    Args:
+        value: Current glucose value
+        high: High threshold value
+        low: Low threshold value
+        
+    Returns:
+        Category string: "high", "normal", or "low"
+    """
+    if value >= high:
+        return "high"
+    elif value <= low:
+        return "low"
     else:
-        current_color = "green"
+        return "normal"
 
-    # Write data with color codes
+
+def get_glucose_color(category: str) -> str:
+    """Get the color name for a glucose category."""
+    return COLOR_NAMES.get(category, "green")
+
+
+def get_color_code(category: str) -> int:
+    """Get the gnuplot color code for a glucose category."""
+    return COLOR_THRESHOLDS.get(category, 2)
+
+
+def format_time(dt) -> str:
+    """Format datetime to HH:MM format or 'N/A' if None."""
+    return dt.strftime('%H:%M') if dt else 'N/A'
+
+
+def generate_glucose_data_file(values: list, high: int, low: int) -> str:
+    """
+    Create a temporary data file for gnuplot with glucose values and color codes.
+    
+    Args:
+        values: List of glucose values
+        high: High threshold
+        low: Low threshold
+        
+    Returns:
+        Path to the temporary data file
+    """
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.dat') as f:
         for i, v in enumerate(values):
-            if v <= low_threshold:
-                color_code = 1  # Blue
-            elif v >= high_threshold:
-                color_code = 3  # Red
-            else:
-                color_code = 2  # Green
+            category = get_glucose_category(v, high, low)
+            color_code = get_color_code(category)
             f.write(f"{i} {v} {color_code}\n")
-        data_file = f.name
-    
-    # Generate plot with gnuplot
-    output_file = '/tmp/dexcom_glucose_plot.png'
+        return f.name
 
+
+def generate_gnuplot_command(data_file: str, output_file: str, values: list) -> str:
+    """
+    Generate gnuplot command string for graph visualization.
+    
+    Args:
+        data_file: Path to data file for gnuplot
+        output_file: Path for output PNG file
+        values: List of glucose values (for scale calculation)
+        
+    Returns:
+        gnuplot command string
+    """
     min_val = min(values)
     max_val = max(values)
     
-    # Add some padding to the y-range
-    y_padding = (max_val - min_val) * 0.1
+    # Add some padding to the y-range for better visualization
+    y_padding = (max_val - min_val) * 0.1 if max_val > min_val else 10
     y_min = max(0, min_val - y_padding)
     y_max = max_val + y_padding
     
-    gnuplot_cmd = f"""
+    return f"""
     set terminal pngcairo size 80,40 transparent;
     set output '{output_file}';
     unset title;
@@ -107,58 +167,124 @@ try:
     set bmargin 0.5;
     set yrange [{y_min}:{y_max}];
 
-    set palette defined (1 '#3b82f6', 2 '#22c55e', 3 '#ef4444');
+    set palette defined ({COLOR_PALETTE});
     unset colorbox;
 
     plot '{data_file}' using 1:2:3 with lines lw 2.5 palette notitle;
     """
-    
-    # Run gnuplot
-    result = subprocess.run(['gnuplot', '-e', gnuplot_cmd], 
-                          capture_output=True, 
-                          text=True)
-    
-    if result.returncode != 0:
-        raise Exception(f"gnuplot error: {result.stderr}")
-    
-    # Read and encode image
-    with open(output_file, 'rb') as f:
-        img_base64 = base64.b64encode(f.read()).decode('utf-8')
-    
-    # Clean up temp files
-    os.unlink(data_file)
-    os.unlink(output_file)
-    
-    # Output with embedded image
-    print(f"({reading_time.strftime('%H:%M') if reading_time else 'N/A'}) {value} {arrow} | image={img_base64} color={current_color}")
-    print("---")
-    
-    if verbose:
-        print(f"Last reading: {reading_time.strftime('%H:%M') if reading_time else 'N/A'}")
-        print(f"Time: {reading_time.strftime('%H:%M') if reading_time else 'N/A'}")
-        print(f"Value: {value}")
-        print(f"Trend: {arrow}")
-        print(f"Region: {env_region}")
-        print(f"Range: {low_threshold}-{high_threshold}")
-        print("---")
-    
-    # Show recent readings in dropdown
-    print("Recent Readings:")
-    for r in readings[:last_readings]:
-        r_time = r.datetime.strftime('%H:%M') if r.datetime else 'N/A'
-        r_value = r.value
-        r_arrow = r.trend_arrow
-        
-        if r_value >= high_threshold:
-            r_color = "red"
-        elif r_value <= low_threshold:
-            r_color = "blue"
-        else:
-            r_color = "green"
-        
-        print(f"{r_time}: {r_value} {r_arrow} | color={r_color} size=11")
 
-except Exception as e:
-    print("❌ Error")
-    print("---")
-    print(str(e))
+
+def generate_graph(values: list, high: int, low: int, output_file: str = '/tmp/dexcom_glucose_plot.png') -> str:
+    """
+    Generate glucose graph using gnuplot and return base64-encoded image.
+    
+    Args:
+        values: List of glucose values
+        high: High threshold
+        low: Low threshold
+        output_file: Path for temporary output PNG
+        
+    Returns:
+        Base64-encoded PNG image data
+        
+    Raises:
+        RuntimeError: If gnuplot fails to generate the graph
+    """
+    data_file = None
+    try:
+        data_file = generate_glucose_data_file(values, high, low)
+        gnuplot_cmd = generate_gnuplot_command(data_file, output_file, values)
+        
+        # Run gnuplot
+        result = subprocess.run(['gnuplot', '-e', gnuplot_cmd], 
+                              capture_output=True, 
+                              text=True)
+        
+        if result.returncode != 0:
+            raise RuntimeError(f"gnuplot error: {result.stderr}")
+        
+        # Read and encode image
+        with open(output_file, 'rb') as f:
+            return base64.b64encode(f.read()).decode('utf-8')
+    finally:
+        # Clean up temp files
+        if data_file and os.path.exists(data_file):
+            os.unlink(data_file)
+        if os.path.exists(output_file):
+            os.unlink(output_file)
+
+
+# ============================================================================
+# MAIN FUNCTION
+# ============================================================================
+
+
+def main():
+    """Main function to fetch and display glucose data."""
+    try:
+        # Initialize Dexcom connection
+        dexcom = Dexcom(username=username, password=user_password, region=region)
+        
+        # Fetch current reading
+        reading = dexcom.get_current_glucose_reading()
+        value = reading.value
+        arrow = reading.trend_arrow
+        reading_time = reading.datetime
+        
+        # Fetch historical readings
+        readings = dexcom.get_glucose_readings(minutes=history_minutes)
+        values = [r.value for r in reversed(readings[:graph_points])]
+        
+        # Determine color for current value
+        category = get_glucose_category(value, high_threshold, low_threshold)
+        current_color = get_glucose_color(category)
+        
+        # Generate graph
+        img_base64 = generate_graph(values, high_threshold, low_threshold)
+        
+        # Output menu bar text with embedded image
+        time_str = format_time(reading_time)
+        print(f"({time_str}) {value} {arrow} | image={img_base64} color={current_color}")
+        print("---")
+        
+        # Verbose output
+        if verbose:
+            print(f"Time: {time_str}")
+            print(f"Value: {value}")
+            print(f"Trend: {arrow}")
+            print(f"Region: {env_region}")
+            print(f"Range: {low_threshold}-{high_threshold}")
+            print("---")
+        
+        # Show recent readings in dropdown
+        print("Recent Readings:")
+        for r in readings[:last_readings]:
+            r_time = format_time(r.datetime)
+            r_value = r.value
+            r_arrow = r.trend_arrow
+            r_category = get_glucose_category(r_value, high_threshold, low_threshold)
+            r_color = get_glucose_color(r_category)
+            
+            print(f"{r_time}: {r_value} {r_arrow} | color={r_color} size=11")
+    
+    except RuntimeError as e:
+        # Handle gnuplot-specific errors
+        print("❌ Graph Error")
+        print("---")
+        print(f"Failed to generate graph: {str(e)}")
+        if verbose:
+            print("---")
+            print(traceback.format_exc())
+    except Exception as e:
+        # Handle other errors (API, network, credentials, etc.)
+        print("❌ Error")
+        print("---")
+        error_msg = str(e)
+        print(f"Error fetching glucose data: {error_msg}")
+        if verbose:
+            print("---")
+            print(traceback.format_exc())
+
+
+if __name__ == "__main__":
+    main()
