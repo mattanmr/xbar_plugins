@@ -28,6 +28,7 @@ import subprocess
 import tempfile
 import base64
 import traceback
+import math
 from pydexcom import Dexcom
 
 # ============================================================================
@@ -52,6 +53,17 @@ COLOR_NAMES = {
     "normal": "green",
     "high": "red"
 }
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def generate_test_glucose_values(points: int = 24):
+    """Generate test glucose values using a sine wave pattern."""
+    for i in range(points):
+        angle = (i / points) * 2 * math.pi
+        value = int(100 + 50 * math.sin(angle))
+        yield value
 
 # Add Homebrew paths so xbar can find gnuplot
 os.environ['PATH'] = '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:' + os.environ.get('PATH', '')
@@ -107,8 +119,13 @@ class GlucoseDataHandler:
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.dat') as f:
             for i, v in enumerate(values):
                 category = self.get_glucose_category(v)
-                color_code = self.get_color_code(category)
-                f.write(f"{i} {v} {color_code}\n")
+                if category == "low":
+                    color = "0x3b82f6"  # Blue
+                elif category == "high":
+                    color = "0xef4444"  # Red
+                else:
+                    color = "0x22c55e"  # Green
+                f.write(f"{i} {v} {color}\n")
             return f.name
     
     def generate_gnuplot_command(self, data_file: str, output_file: str, values: list) -> str:
@@ -136,10 +153,7 @@ class GlucoseDataHandler:
         set bmargin 0.5;
         set yrange [{y_min}:{y_max}];
 
-        set palette defined ({COLOR_PALETTE});
-        unset colorbox;
-
-        plot '{data_file}' using 1:2:3 with lines lw 2.5 palette notitle;
+        plot '{data_file}' using 1:2:3 with lines lw 2.5 linecolor rgb variable notitle;
         """
     
     def generate_graph(self, values: list, output_file: str = '/tmp/dexcom_glucose_plot.png') -> str:
@@ -219,6 +233,7 @@ def main():
         # Fetch historical readings
         readings = dexcom.get_glucose_readings(minutes=history_minutes)
         values = [r.value for r in reversed(readings[:graph_points])]
+        # values = list(generate_test_glucose_values(graph_points))  # For testing purposes
         
         # Determine color for current value
         category = handler.get_glucose_category(value)
