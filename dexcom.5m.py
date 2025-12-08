@@ -272,7 +272,9 @@ def main():
             r_color = handler.get_glucose_color(r_category)
             
             print(f"{r_time}: {r_value} {r_arrow} | color={r_color} size=11")
-    
+        if not img_base64:
+            print("---")
+            print("Note: Graph unavailable. Ensure gnuplot is installed for graph generation. | color=purple")
     except Exception as e:
         # Handle other errors (API, network, credentials, etc.)
         print("❌ Error")
