@@ -8,7 +8,7 @@ This plugin displays your Dexcom glucose readings directly in your macOS menu ba
 
 - **Real-time glucose readings** in your menu bar with trend arrows
 - **Color-coded values**: Red (high), Green (normal), Blue (low)
-- **Embedded glucose graph** showing the last 24 readings with color-coded visualization
+- **Embedded glucose graph** showing the last readings with color-coded visualization
 - **Recent readings history** in dropdown menu with configurable count
 - **Customizable thresholds** for high/low glucose alerts
 - **Multi-region support** for Dexcom servers (USA, outside USA, Japan)
