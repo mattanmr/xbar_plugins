@@ -80,26 +80,11 @@ class GlucoseDataHandler:
     """Handles glucose data processing, formatting, and visualization."""
     
     def __init__(self, high_threshold: int, low_threshold: int):
-        """
-        Initialize the glucose data handler.
-        
-        Args:
-            high_threshold: Blood glucose level considered "high"
-            low_threshold: Blood glucose level considered "low"
-        """
+
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
     
     def get_glucose_category(self, value: int) -> str:
-        """
-        Determine glucose level category based on configured thresholds.
-        
-        Args:
-            value: Current glucose value
-            
-        Returns:
-            Category string: "high", "normal", or "low"
-        """
         if value >= self.high_threshold:
             return "high"
         elif value <= self.low_threshold:
@@ -108,52 +93,16 @@ class GlucoseDataHandler:
             return "normal"
     
     def get_glucose_color(self, category: str) -> str:
-        """
-        Get the color name for a glucose category.
-        
-        Args:
-            category: Glucose category ("high", "normal", "low")
-            
-        Returns:
-            Color name string
-        """
         return COLOR_NAMES.get(category, "green")
     
     def get_color_code(self, category: str) -> int:
-        """
-        Get the gnuplot color code for a glucose category.
-        
-        Args:
-            category: Glucose category ("high", "normal", "low")
-            
-        Returns:
-            Color code integer for gnuplot
-        """
         return COLOR_THRESHOLDS.get(category, 2)
     
     @staticmethod
     def format_time(dt) -> str:
-        """
-        Format datetime to HH:MM format or 'N/A' if None.
-        
-        Args:
-            dt: datetime object or None
-            
-        Returns:
-            Formatted time string
-        """
         return dt.strftime('%H:%M') if dt else 'N/A'
     
     def generate_glucose_data_file(self, values: list) -> str:
-        """
-        Create a temporary data file for gnuplot with glucose values and color codes.
-        
-        Args:
-            values: List of glucose values
-            
-        Returns:
-            Path to the temporary data file
-        """
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.dat') as f:
             for i, v in enumerate(values):
                 category = self.get_glucose_category(v)
@@ -162,17 +111,6 @@ class GlucoseDataHandler:
             return f.name
     
     def generate_gnuplot_command(self, data_file: str, output_file: str, values: list) -> str:
-        """
-        Generate gnuplot command string for graph visualization.
-        
-        Args:
-            data_file: Path to data file for gnuplot
-            output_file: Path for output PNG file
-            values: List of glucose values (for scale calculation)
-            
-        Returns:
-            gnuplot command string
-        """
         min_val = min(values)
         max_val = max(values)
         
@@ -204,19 +142,6 @@ class GlucoseDataHandler:
         """
     
     def generate_graph(self, values: list, output_file: str = '/tmp/dexcom_glucose_plot.png') -> str:
-        """
-        Generate glucose graph using gnuplot and return base64-encoded image.
-        
-        Args:
-            values: List of glucose values
-            output_file: Path for temporary output PNG
-            
-        Returns:
-            Base64-encoded PNG image data
-            
-        Raises:
-            RuntimeError: If gnuplot fails to generate the graph
-        """
         data_file = None
         try:
             data_file = self.generate_glucose_data_file(values)
