@@ -64,6 +64,7 @@ Desktop.ini
 *.swp
 *.swo
 *~
+.idea/
 
 # Ignore installer artifacts
 get-pip.py
