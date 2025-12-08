@@ -72,146 +72,173 @@ region: str = REGION_MAP.get(env_region, "ous")
 verbose: bool = os.environ.get("VAR_VERBOSE", "false").lower() == "true"
 
 # ============================================================================
-# HELPER FUNCTIONS
+# GLUCOSE DATA HANDLER CLASS
 # ============================================================================
 
 
-def get_glucose_category(value: int, high: int, low: int) -> str:
-    """
-    Determine glucose level category based on thresholds.
+class GlucoseDataHandler:
+    """Handles glucose data processing, formatting, and visualization."""
     
-    Args:
-        value: Current glucose value
-        high: High threshold value
-        low: Low threshold value
+    def __init__(self, high_threshold: int, low_threshold: int):
+        """
+        Initialize the glucose data handler.
         
-    Returns:
-        Category string: "high", "normal", or "low"
-    """
-    if value >= high:
-        return "high"
-    elif value <= low:
-        return "low"
-    else:
-        return "normal"
-
-
-def get_glucose_color(category: str) -> str:
-    """Get the color name for a glucose category."""
-    return COLOR_NAMES.get(category, "green")
-
-
-def get_color_code(category: str) -> int:
-    """Get the gnuplot color code for a glucose category."""
-    return COLOR_THRESHOLDS.get(category, 2)
-
-
-def format_time(dt) -> str:
-    """Format datetime to HH:MM format or 'N/A' if None."""
-    return dt.strftime('%H:%M') if dt else 'N/A'
-
-
-def generate_glucose_data_file(values: list, high: int, low: int) -> str:
-    """
-    Create a temporary data file for gnuplot with glucose values and color codes.
+        Args:
+            high_threshold: Blood glucose level considered "high"
+            low_threshold: Blood glucose level considered "low"
+        """
+        self.high_threshold = high_threshold
+        self.low_threshold = low_threshold
     
-    Args:
-        values: List of glucose values
-        high: High threshold
-        low: Low threshold
+    def get_glucose_category(self, value: int) -> str:
+        """
+        Determine glucose level category based on configured thresholds.
         
-    Returns:
-        Path to the temporary data file
-    """
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.dat') as f:
-        for i, v in enumerate(values):
-            category = get_glucose_category(v, high, low)
-            color_code = get_color_code(category)
-            f.write(f"{i} {v} {color_code}\n")
-        return f.name
-
-
-def generate_gnuplot_command(data_file: str, output_file: str, values: list) -> str:
-    """
-    Generate gnuplot command string for graph visualization.
+        Args:
+            value: Current glucose value
+            
+        Returns:
+            Category string: "high", "normal", or "low"
+        """
+        if value >= self.high_threshold:
+            return "high"
+        elif value <= self.low_threshold:
+            return "low"
+        else:
+            return "normal"
     
-    Args:
-        data_file: Path to data file for gnuplot
-        output_file: Path for output PNG file
-        values: List of glucose values (for scale calculation)
+    def get_glucose_color(self, category: str) -> str:
+        """
+        Get the color name for a glucose category.
         
-    Returns:
-        gnuplot command string
-    """
-    min_val = min(values)
-    max_val = max(values)
+        Args:
+            category: Glucose category ("high", "normal", "low")
+            
+        Returns:
+            Color name string
+        """
+        return COLOR_NAMES.get(category, "green")
     
-    # Add some padding to the y-range for better visualization
-    y_padding = (max_val - min_val) * 0.1 if max_val > min_val else 10
-    y_min = max(0, min_val - y_padding)
-    y_max = max_val + y_padding
+    def get_color_code(self, category: str) -> int:
+        """
+        Get the gnuplot color code for a glucose category.
+        
+        Args:
+            category: Glucose category ("high", "normal", "low")
+            
+        Returns:
+            Color code integer for gnuplot
+        """
+        return COLOR_THRESHOLDS.get(category, 2)
     
-    return f"""
-    set terminal pngcairo size 80,40 transparent;
-    set output '{output_file}';
-    unset title;
-    unset xlabel;
-    unset ylabel;
-    unset key;
-    unset xtics;
-    unset ytics;
-    set border 0;
-    set lmargin 0;
-    set rmargin 0.5;
-    set tmargin 0.5;
-    set bmargin 0.5;
-    set yrange [{y_min}:{y_max}];
-
-    set palette defined ({COLOR_PALETTE});
-    unset colorbox;
-
-    plot '{data_file}' using 1:2:3 with lines lw 2.5 palette notitle;
-    """
-
-
-def generate_graph(values: list, high: int, low: int, output_file: str = '/tmp/dexcom_glucose_plot.png') -> str:
-    """
-    Generate glucose graph using gnuplot and return base64-encoded image.
+    @staticmethod
+    def format_time(dt) -> str:
+        """
+        Format datetime to HH:MM format or 'N/A' if None.
+        
+        Args:
+            dt: datetime object or None
+            
+        Returns:
+            Formatted time string
+        """
+        return dt.strftime('%H:%M') if dt else 'N/A'
     
-    Args:
-        values: List of glucose values
-        high: High threshold
-        low: Low threshold
-        output_file: Path for temporary output PNG
+    def generate_glucose_data_file(self, values: list) -> str:
+        """
+        Create a temporary data file for gnuplot with glucose values and color codes.
         
-    Returns:
-        Base64-encoded PNG image data
+        Args:
+            values: List of glucose values
+            
+        Returns:
+            Path to the temporary data file
+        """
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.dat') as f:
+            for i, v in enumerate(values):
+                category = self.get_glucose_category(v)
+                color_code = self.get_color_code(category)
+                f.write(f"{i} {v} {color_code}\n")
+            return f.name
+    
+    def generate_gnuplot_command(self, data_file: str, output_file: str, values: list) -> str:
+        """
+        Generate gnuplot command string for graph visualization.
         
-    Raises:
-        RuntimeError: If gnuplot fails to generate the graph
-    """
-    data_file = None
-    try:
-        data_file = generate_glucose_data_file(values, high, low)
-        gnuplot_cmd = generate_gnuplot_command(data_file, output_file, values)
+        Args:
+            data_file: Path to data file for gnuplot
+            output_file: Path for output PNG file
+            values: List of glucose values (for scale calculation)
+            
+        Returns:
+            gnuplot command string
+        """
+        min_val = min(values)
+        max_val = max(values)
         
-        # Run gnuplot
-        result = subprocess.run(['gnuplot', '-e', gnuplot_cmd], 
-                              capture_output=True, 
-                              text=True)
+        # Add some padding to the y-range for better visualization
+        y_padding = (max_val - min_val) * 0.1 if max_val > min_val else 10
+        y_min = max(0, min_val - y_padding)
+        y_max = max_val + y_padding
         
-        if result.returncode != 0:
-            raise RuntimeError(f"gnuplot error: {result.stderr}")
+        return f"""
+        set terminal pngcairo size 80,40 transparent;
+        set output '{output_file}';
+        unset title;
+        unset xlabel;
+        unset ylabel;
+        unset key;
+        unset xtics;
+        unset ytics;
+        set border 0;
+        set lmargin 0;
+        set rmargin 0.5;
+        set tmargin 0.5;
+        set bmargin 0.5;
+        set yrange [{y_min}:{y_max}];
+
+        set palette defined ({COLOR_PALETTE});
+        unset colorbox;
+
+        plot '{data_file}' using 1:2:3 with lines lw 2.5 palette notitle;
+        """
+    
+    def generate_graph(self, values: list, output_file: str = '/tmp/dexcom_glucose_plot.png') -> str:
+        """
+        Generate glucose graph using gnuplot and return base64-encoded image.
         
-        # Read and encode image
-        with open(output_file, 'rb') as f:
-            return base64.b64encode(f.read()).decode('utf-8')
-    finally:
-        # Clean up temp files
-        if data_file and os.path.exists(data_file):
-            os.unlink(data_file)
-        if os.path.exists(output_file):
-            os.unlink(output_file)
+        Args:
+            values: List of glucose values
+            output_file: Path for temporary output PNG
+            
+        Returns:
+            Base64-encoded PNG image data
+            
+        Raises:
+            RuntimeError: If gnuplot fails to generate the graph
+        """
+        data_file = None
+        try:
+            data_file = self.generate_glucose_data_file(values)
+            gnuplot_cmd = self.generate_gnuplot_command(data_file, output_file, values)
+            
+            # Run gnuplot
+            result = subprocess.run(['gnuplot', '-e', gnuplot_cmd], 
+                                  capture_output=True, 
+                                  text=True)
+            
+            if result.returncode != 0:
+                raise RuntimeError(f"gnuplot error: {result.stderr}")
+            
+            # Read and encode image
+            with open(output_file, 'rb') as f:
+                return base64.b64encode(f.read()).decode('utf-8')
+        finally:
+            # Clean up temp files
+            if data_file and os.path.exists(data_file):
+                os.unlink(data_file)
+            if os.path.exists(output_file):
+                os.unlink(output_file)
 
 
 # ============================================================================
@@ -222,7 +249,8 @@ def generate_graph(values: list, high: int, low: int, output_file: str = '/tmp/d
 def main():
     """Main function to fetch and display glucose data."""
     try:
-        # Initialize Dexcom connection
+        # Initialize handler and Dexcom connection
+        handler = GlucoseDataHandler(high_threshold, low_threshold)
         dexcom = Dexcom(username=username, password=user_password, region=region)
         
         # Fetch current reading
@@ -236,15 +264,31 @@ def main():
         values = [r.value for r in reversed(readings[:graph_points])]
         
         # Determine color for current value
-        category = get_glucose_category(value, high_threshold, low_threshold)
-        current_color = get_glucose_color(category)
+        category = handler.get_glucose_category(value)
+        current_color = handler.get_glucose_color(category)
         
-        # Generate graph
-        img_base64 = generate_graph(values, high_threshold, low_threshold)
+        # Attempt to generate graph
+        img_base64 = None
+        try:
+            img_base64 = handler.generate_graph(values)
+        except RuntimeError as graph_error:
+            # If graph generation fails, we can still show the reading
+            if verbose:
+                print(f"Warning: Graph generation failed: {str(graph_error)}")
+            # Continue without image
         
-        # Output menu bar text with embedded image
-        time_str = format_time(reading_time)
-        print(f"({time_str}) {value} {arrow} | image={img_base64} color={current_color}")
+        # Output menu bar text
+        time_str = handler.format_time(reading_time)
+        menu_text = f"({time_str}) {value} {arrow}"
+        
+        if img_base64:
+            # Include image if available
+            menu_text += f" | image={img_base64} color={current_color}"
+        else:
+            # Just use color coding if image unavailable
+            menu_text += f" | color={current_color}"
+        
+        print(menu_text)
         print("---")
         
         # Verbose output
@@ -254,27 +298,23 @@ def main():
             print(f"Trend: {arrow}")
             print(f"Region: {env_region}")
             print(f"Range: {low_threshold}-{high_threshold}")
+            if img_base64:
+                print("Graph: Generated successfully")
+            else:
+                print("Graph: Failed to generate (gnuplot unavailable or error)")
             print("---")
         
         # Show recent readings in dropdown
         print("Recent Readings:")
         for r in readings[:last_readings]:
-            r_time = format_time(r.datetime)
+            r_time = handler.format_time(r.datetime)
             r_value = r.value
             r_arrow = r.trend_arrow
-            r_category = get_glucose_category(r_value, high_threshold, low_threshold)
-            r_color = get_glucose_color(r_category)
+            r_category = handler.get_glucose_category(r_value)
+            r_color = handler.get_glucose_color(r_category)
             
             print(f"{r_time}: {r_value} {r_arrow} | color={r_color} size=11")
     
-    except RuntimeError as e:
-        # Handle gnuplot-specific errors
-        print("❌ Graph Error")
-        print("---")
-        print(f"Failed to generate graph: {str(e)}")
-        if verbose:
-            print("---")
-            print(traceback.format_exc())
     except Exception as e:
         # Handle other errors (API, network, credentials, etc.)
         print("❌ Error")
