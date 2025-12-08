@@ -7,6 +7,7 @@
 # <xbar.image>https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_reader.png</xbar.image>
 # <xbar.dependencies>gnuplot</xbar.dependencies>
 
+# <xbar.var>boolean(AKNOWLEDGE_DISCLAIMER=false): By setting this variable to true, you acknowledge that you have read and understood the disclaimer provided in the plugin description.</xbar.var>
 # <xbar.var>string(PASSWORD=""): Your dexcom account password </xbar.var>
 # <xbar.var>string(USERNAME=""): Your dexcom account username </xbar.var>
 # <xbar.var>number(MINUTES=90): amount of history in minutes </xbar.var>
@@ -287,4 +288,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    
+    if os.getenv("AKNOWLEDGE_DISCLAIMER", "false").lower() == "true":
+        main()
+    else:
+        print("Please acknowledge the disclaimer by setting AKNOWLEDGE_DISCLAIMER to true.")
