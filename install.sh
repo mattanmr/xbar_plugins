@@ -139,5 +139,5 @@ open -a /Applications/xbar.app
 # 11. Final instructions (popup)
 # -----------------------------
 osascript <<EOD
-  display dialog "Setup complete!\n\nPlease refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option.\n\n- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', and enter your Dexcom credentials.\n- If you have any issues, see the README for troubleshooting." with title "Dexcom xbar Plugin Installer" buttons {"OK"} default button "OK"
+  display dialog "Setup complete!\n\nPlease refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option.\n\n- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', enter your Dexcom credentials and acknowledge the disclaimer.\n- If you have any issues, see the README for troubleshooting." with title "Dexcom xbar Plugin Installer" buttons {"OK"} default button "OK"
 EOD
