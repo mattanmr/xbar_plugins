@@ -60,6 +60,11 @@ else
     echo "Config directory already exists at $CONFIG_DIR"
 fi
 
+# Copy updater module to config directory (will be imported by plugin)
+cp dexcom_updater.py "$CONFIG_DIR/"
+echo "Update manager module copied to config directory."
+chmod +x "$CONFIG_DIR/dexcom_updater.py"
+
 # Initialize config.json if it doesn't exist (preserve existing config on updates)
 CONFIG_FILE="$CONFIG_DIR/config.json"
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -135,11 +140,10 @@ if [ ! -d "$PLUGINS_DIR" ]; then
 fi
 
 # -----------------------------
-# 8. Copy plugin files
+# 8. Copy plugin file
 # -----------------------------
 cp dexcom.5m.py "$PLUGINS_DIR/"
-cp dexcom_updater.py "$PLUGINS_DIR/"
-echo "Plugin files copied to xbar plugins folder."
+echo "Plugin copied to xbar plugins folder."
 chmod +x "$PLUGINS_DIR/dexcom.5m.py"
 
 # -----------------------------

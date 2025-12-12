@@ -128,11 +128,10 @@ If you prefer manual setup, see the [install.sh](install.sh) script for required
 To completely remove all traces of the plugin:
 
 ```bash
-# 1. Remove the plugin files
+# 1. Remove the plugin file
 rm ~/Library/Application\ Support/xbar/plugins/dexcom.5m.py
-rm ~/Library/Application\ Support/xbar/plugins/dexcom_updater.py
 
-# 2. Remove configuration directory (includes backups and logs)
+# 2. Remove configuration directory (includes updater module, backups, and logs)
 rm -rf ~/.config/dexcom_plugin
 
 # 3. Remove Python dependencies (optional - only if not used by other apps)
@@ -149,8 +148,8 @@ python3 -m pip uninstall -y pydexcom sparklines
 ## File Locations
 
 - **Plugin:** `~/Library/Application Support/xbar/plugins/dexcom.5m.py`
-- **Updater Module:** `~/Library/Application Support/xbar/plugins/dexcom_updater.py`
 - **Config:** `~/.config/dexcom_plugin/config.json`
+- **Updater Module:** `~/.config/dexcom_plugin/dexcom_updater.py`
 - **Backup:** `~/.config/dexcom_plugin/backup/`
 - **Logs:** `~/.config/dexcom_plugin/update.log`
 
