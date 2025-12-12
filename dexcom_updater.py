@@ -58,7 +58,7 @@ class ConfigManager:
             "backup_version": None,
             "repo": "mattanmr/xbar_plugins",
             "source_ref": "update_process",
-            "manifest_url": "https://raw.githubusercontent.com/mattanmr/xbar_plugins/update_process/update_manifest.json",
+            "manifest_url": "https://raw.githubusercontent.com/mattanmr/xbar_plugins/update_process/config/update_manifest.json",
             "version_url": "https://raw.githubusercontent.com/mattanmr/xbar_plugins/update_process/VERSION",
             "dependencies": {
                 "pip": ["pydexcom"],

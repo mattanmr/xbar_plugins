@@ -50,7 +50,9 @@ coverage.xml
 .LSOverride
 
 # xbar plugin output/cache
-*.json
+*.log
+cache/*.json
+!config/*.json
 *.log
 
 # VS Code
