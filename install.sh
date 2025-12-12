@@ -49,6 +49,39 @@ fi
 python3 -m pip install --user --upgrade pydexcom sparklines
 
 # -----------------------------
+# 3b. Create config directory for plugin
+# -----------------------------
+CONFIG_DIR="$HOME/.config/dexcom_plugin"
+echo "Creating plugin config directory: $CONFIG_DIR"
+if [ ! -d "$CONFIG_DIR" ]; then
+    mkdir -p "$CONFIG_DIR"
+    echo "Created config directory at $CONFIG_DIR"
+else
+    echo "Config directory already exists at $CONFIG_DIR"
+fi
+
+# Initialize config.json if it doesn't exist (preserve existing config on updates)
+CONFIG_FILE="$CONFIG_DIR/config.json"
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Creating initial config.json..."
+    cat > "$CONFIG_FILE" << 'EOF'
+{
+  "version": "1.0.0",
+  "last_check": 0,
+  "first_run_after_update": false,
+  "backup_version": null,
+  "dependencies": {
+    "pip": ["pydexcom", "sparklines"],
+    "homebrew": []
+  }
+}
+EOF
+    echo "Created config.json"
+else
+    echo "Config file already exists - preserving existing configuration"
+fi
+
+# -----------------------------
 # 4. Prompt for Accessibility Permissions
 # -----------------------------
 result=$(osascript -e 'display alert "Please allow xbar to control system events" message "If popup appears, please choose '"'Allow'"' xbar to control system events" buttons {"OK", "Cancel"} default button "OK" cancel button "Cancel"')
@@ -102,12 +135,12 @@ if [ ! -d "$PLUGINS_DIR" ]; then
 fi
 
 # -----------------------------
-# 8. Copy plugin file and update script
+# 8. Copy plugin files
 # -----------------------------
 cp dexcom.5m.py "$PLUGINS_DIR/"
-cp update.sh "$PLUGINS_DIR/"
-echo "Plugin and update script copied to xbar plugins folder."
-chmod +x "$PLUGINS_DIR/dexcom.5m.py" "$PLUGINS_DIR/update.sh"
+cp dexcom_updater.py "$PLUGINS_DIR/"
+echo "Plugin files copied to xbar plugins folder."
+chmod +x "$PLUGINS_DIR/dexcom.5m.py"
 
 # -----------------------------
 # 9. Open plugins folder for user
