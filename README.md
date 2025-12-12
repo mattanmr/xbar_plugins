@@ -1,8 +1,8 @@
 # Dexcom Glucose Reader for macOS menu bar
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 
-This plugin displays your Dexcom glucose readings directly in your macOS menu bar using [xbar](https://xbarapp.com/). Features include real-time glucose readings with trend arrows, sparkline graphs, and automatic update notifications.
+This plugin displays your Dexcom glucose readings directly in your macOS menu bar using [xbar](https://xbarapp.com/). Features include real-time glucose readings with trend arrows, embedded glucose graphs, automatic update checking, and recent reading history.
 
 ---
 
@@ -18,12 +18,16 @@ The authors and contributors of this software accept no responsibility or liabil
 
 ## Features
 
-- **Real-time glucose readings** with trend arrows
-- **Sparkline graph** showing recent glucose history
+- **Real-time glucose readings** in your menu bar with trend arrows
+- **Color-coded values**: Red (high), Green (normal), Blue (low)
+- **Embedded glucose graph** showing recent readings with color-coded visualization
+- **Recent readings history** in dropdown menu with configurable count
+- **Customizable thresholds** for high/low glucose alerts
+- **Multi-region support** for Dexcom servers (USA, outside USA, Japan)
 - **Automatic update checking** (weekly, with user approval required)
 - **Automatic rollback** on update failures
-- **Multi-region support** for Dexcom servers (USA, outside USA, Japan)
-- **Customizable settings** for history window and graph points
+- **Single backup retention** of previous plugin version
+- **Dependency management** with optional auto-cleanup
 
 ---
 
@@ -32,127 +36,218 @@ The authors and contributors of this software accept no responsibility or liabil
 Copy and paste the following command into your Terminal to download all necessary files and run the installer:
 
 ```sh
-curl -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/install.sh \
-     -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom.5m.py && \
-chmod +x install.sh && \
-./install.sh
+curl -O https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/install.sh && chmod +x install.sh && ./install.sh
 ```
 
-After the script completes, follow the popup instructions to finish configuring your Dexcom plugin.
+The installer will:
+1. Install system dependencies (Xcode tools, Python, pip)
+2. Install Python dependencies (pydexcom, gnuplot)
+3. Create configuration directory (`~/.config/dexcom_plugin/`)
+4. Deploy the plugin to xbar
+5. Launch xbar and open the plugin settings
+
+---
+
+## Manual Installation
+
+If you prefer manual installation:
+
+1. **Download the files:**
+   ```sh
+   # Create config directory
+   mkdir -p ~/.config/dexcom_plugin
+   
+   # Download plugin
+   curl -O ~/Library/Application\ Support/xbar/plugins/dexcom.5m.py \
+     https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom.5m.py
+   
+   # Download updater module
+   curl -O ~/.config/dexcom_plugin/dexcom_updater.py \
+     https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/dexcom_updater.py
+   ```
+
+2. **Install dependencies:**
+   ```sh
+   # Install Python dependencies
+   pip3 install pydexcom
+   
+   # Install gnuplot (using Homebrew)
+   brew install gnuplot
+   ```
+
+3. **Make plugin executable:**
+   ```sh
+   chmod +x ~/Library/Application\ Support/xbar/plugins/dexcom.5m.py
+   ```
+
+4. **Configure in xbar:**
+   - Open xbar's Plugin Browser
+   - Find "Dexcom Glucose Reader"
+   - Click the gear icon to set variables
+   - Acknowledge the disclaimer by setting `ACKNOWLEDGE_DISCLAIMER` to true
+   - Enter your Dexcom username and password
+   - Select your region
 
 ---
 
 ## Configuration
 
-Once installed, you can configure the plugin by clicking the xbar menu icon and selecting "Open Plugin" next to the Dexcom Glucose Reader. Configure the following settings:
+### Required Variables
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `USERNAME` | (required) | Your Dexcom account username/email |
-| `PASSWORD` | (required) | Your Dexcom account password |
-| `REGION` | "outside USA" | Dexcom server location: "in USA", "outside USA", or "Japan" |
-| `MINUTES` | 90 | Historical data window in minutes |
-| `GRAPH_POINTS` | 24 | Number of data points to display in the graph |
-| `VAR_VERBOSE` | false | Enable detailed output for debugging |
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `ACKNOWLEDGE_DISCLAIMER` | boolean | false | **REQUIRED**: Set to true to confirm you've read the disclaimer |
+| `USERNAME` | string | (empty) | Your Dexcom account username/email |
+| `PASSWORD` | string | (empty) | Your Dexcom account password |
+| `REGION` | select | outside USA | Your Dexcom server region |
 
----
+### Optional Variables
 
-## Auto-Update Feature
-
-The plugin includes an intelligent auto-update system:
-
-- **Weekly checks**: The plugin checks for new releases once per week (respects GitHub API rate limits: 60/hour)
-- **User approval required**: Updates are never installed automatically - you must click to approve
-- **Automatic backup**: Your current version is backed up before updating (only one backup kept at a time)
-- **Automatic rollback**: If the update fails on first run, the plugin automatically restores the previous version
-- **Update notifications**: When an update is available, you'll see "🆕 Update available: v1.0.0 → v2.0.0" in the dropdown menu
-
-### How Updates Work
-
-1. Plugin checks GitHub releases API weekly
-2. If new version found, notification appears in xbar dropdown
-3. Click "Install Update vX.X.X" to approve
-4. Current version backed up to `~/.config/dexcom_plugin/backup/`
-5. New version downloaded and installed
-6. On first run, if errors occur, automatic rollback restores previous version
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `MINUTES` | number | 90 | Minutes of history to display in graph |
+| `GRAPH_POINTS` | number | 24 | Number of data points in glucose graph |
+| `HIGH_THRESHOLD` | number | 130 | High glucose threshold (mg/dL) |
+| `LOW_THRESHOLD` | number | 75 | Low glucose threshold (mg/dL) |
+| `LAST_READINGS` | number | 4 | Number of recent readings to show |
+| `VAR_VERBOSE` | boolean | false | Enable verbose logging and error details |
 
 ---
 
-## Dependencies
+## Auto-Update System
 
-The installer automatically installs:
-- **Python 3** (if not already installed)
-- **pip** (Python package manager)
-- **pydexcom** - Python library for Dexcom API access
-- **sparklines** - For text-based graph visualization
+### How It Works
 
----
+The plugin includes an automatic update checker that:
 
-## Manual Installation (Advanced)
+1. **Checks weekly** for new releases on GitHub
+2. **Notifies you** when an update is available
+3. **Requires approval** before updating (manual click required)
+4. **Creates backup** of your current version before updating
+5. **Auto-rollback** if the new version fails
+6. **Tracks dependencies** and alerts on changes
 
-If you prefer manual setup, see the [install.sh](install.sh) script for required steps.
+### Update Check Configuration
 
----
+- Updates are checked **once per week**
+- You'll see an orange "Update available" notification in the menu bar
+- Click the notification to view release details
+- Updates require **explicit approval** - no automatic installation
+- Your current version is **backed up** before any update
+- If the updated version fails, it **automatically restores** your backup
 
-## Troubleshooting
+### Manual Update Check
 
-**Error: Invalid credentials or "Dexcom service unavailable"**
-- Verify your Dexcom username and password are correct
-- Ensure your internet connection is working
-- Check that you've selected the correct region for your Dexcom server
-
-**Plugin won't load in xbar**
-- Ensure the file is executable: `chmod +x ~/Library/Application\ Support/xbar/plugins/dexcom.5m.py`
-- Check xbar's plugin error log for details
-- Verify all Python dependencies are installed
-
-**Update failed and rollback didn't work**
-- Reinstall from scratch using the one-line installation command above
-- Your config directory (`~/.config/dexcom_plugin/`) contains logs that can help diagnose issues
-
----
-
-## Uninstalling
-
-### Option 1: Via xbar (Quick Uninstall)
-
-1. Open xbar plugin browser
-2. Find the Dexcom Glucose Reader plugin
-3. Click **Uninstall this plugin**
-4. Refresh xbar
-
-**Note:** This removes the plugin but leaves configuration files and dependencies intact.
-
-### Option 2: Complete Manual Cleanup
-
-To completely remove all traces of the plugin:
-
-```bash
-# 1. Remove the plugin file
-rm ~/Library/Application\ Support/xbar/plugins/dexcom.5m.py
-
-# 2. Remove configuration directory (includes updater module, backups, and logs)
-rm -rf ~/.config/dexcom_plugin
-
-# 3. Remove Python dependencies (optional - only if not used by other apps)
-python3 -m pip uninstall -y pydexcom sparklines
-
-# 4. Refresh xbar
-# Click xbar icon in menu bar > Refresh All
-```
-
-**Warning:** Removing `~/.config/dexcom_plugin/` will delete your backups and update history. Only do this if you're completely removing the plugin.
+To trigger an update check immediately:
+1. Reset the last check timestamp in config.json
+2. The plugin will check for updates on its next run
 
 ---
 
 ## File Locations
 
-- **Plugin:** `~/Library/Application Support/xbar/plugins/dexcom.5m.py`
-- **Config:** `~/.config/dexcom_plugin/config.json`
-- **Updater Module:** `~/.config/dexcom_plugin/dexcom_updater.py`
-- **Backup:** `~/.config/dexcom_plugin/backup/`
-- **Logs:** `~/.config/dexcom_plugin/update.log`
+| File | Location | Purpose |
+|------|----------|---------|
+| `dexcom.5m.py` | `~/Library/Application Support/xbar/plugins/` | Main plugin (executed by xbar) |
+| `dexcom_updater.py` | `~/.config/dexcom_plugin/` | Update management module |
+| `config.json` | `~/.config/dexcom_plugin/` | Version tracking, update status, settings |
+| `backup/` | `~/.config/dexcom_plugin/backup/` | Stores single backup of previous version |
+| `update.log` | `~/.config/dexcom_plugin/` | Update operation logs |
 
 ---
 
-For questions or help, open an issue on this repository.
+## Troubleshooting
+
+### "Graph unavailable" message
+
+**Cause:** gnuplot is not installed or not in PATH
+
+**Solution:**
+```sh
+brew install gnuplot
+# Verify installation
+which gnuplot  # Should output /opt/homebrew/bin/gnuplot or similar
+```
+
+### "Error fetching glucose data"
+
+**Causes:**
+- Incorrect username/password
+- Network connectivity issue
+- Dexcom server is down
+- Region setting is incorrect
+
+**Solutions:**
+1. Verify your Dexcom username (email) and password in xbar settings
+2. Test your internet connection
+3. Confirm your region setting matches your Dexcom account location
+4. Check status at https://status.dexcomcloud.com/
+5. Enable `VAR_VERBOSE` for detailed error messages
+
+### "Update system not available"
+
+**Cause:** dexcom_updater.py is missing from `~/.config/dexcom_plugin/`
+
+**Solution:**
+```sh
+# Re-run the installer
+curl -O install.sh https://raw.githubusercontent.com/mattanmr/xbar_plugins/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+### Dependency issues after update
+
+The plugin tracks dependency changes between versions. If asked to remove old dependencies:
+
+```sh
+# Automatic removal (if prompted)
+pip3 uninstall sparklines  # v1.0.0 dependency, not needed in v2.0.0
+
+# Manual removal (if needed)
+pip3 uninstall -y sparklines
+```
+
+---
+
+## Uninstallation
+
+### Method 1: Via xbar GUI (Recommended)
+
+1. Open xbar
+2. Open Plugin Browser
+3. Find "Dexcom Glucose Reader"
+4. Click the "X" button to uninstall
+
+### Method 2: Manual Uninstallation
+
+```sh
+# Remove plugin from xbar
+rm ~/Library/Application\ Support/xbar/plugins/dexcom.5m.py
+
+# Remove configuration directory and all related files
+rm -rf ~/.config/dexcom_plugin/
+
+# Optional: Remove Python dependencies
+pip3 uninstall pydexcom  # Keeps pydexcom if you use it for other projects
+```
+
+---
+
+## Support & Contributing
+
+- **Issues:** Please report bugs on [GitHub Issues](https://github.com/mattanmr/xbar_plugins/issues)
+- **Suggestions:** Feature requests welcome via GitHub Issues
+- **Contributing:** Pull requests are welcome for bug fixes and enhancements
+
+---
+
+## License
+
+This project is provided as-is for personal use. See the disclaimer above.
+
+## Acknowledgments
+
+- [xbar](https://xbarapp.com/) - Menu bar app framework
+- [pydexcom](https://github.com/statik/pydexcom) - Dexcom API wrapper
+- [gnuplot](http://www.gnuplot.info/) - Graph visualization

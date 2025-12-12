@@ -46,7 +46,24 @@ fi
 # -----------------------------
 # 3. Install required Python packages
 # -----------------------------
-python3 -m pip install --user --upgrade pydexcom sparklines
+python3 -m pip install --user --upgrade pydexcom
+
+# -----------------------------
+# 3b. Install gnuplot
+# -----------------------------
+if ! command -v gnuplot >/dev/null 2>&1; then
+  echo "gnuplot is not installed. Installing via Homebrew..."
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew is not installed. Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$($(brew --prefix)/bin/brew shellenv)"
+    echo "Adding Homebrew to PATH"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
+  brew install gnuplot
+else
+  echo "gnuplot is already installed"
+fi
 
 # -----------------------------
 # 3b. Create config directory for plugin
@@ -71,13 +88,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
     echo "Creating initial config.json..."
     cat > "$CONFIG_FILE" << 'EOF'
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "last_check": 0,
   "first_run_after_update": false,
   "backup_version": null,
   "dependencies": {
-    "pip": ["pydexcom", "sparklines"],
-    "homebrew": []
+    "pip": ["pydexcom"],
+    "homebrew": ["gnuplot"]
   }
 }
 EOF
@@ -160,5 +177,5 @@ open -a /Applications/xbar.app
 # 11. Final instructions (popup)
 # -----------------------------
 osascript <<EOD
-  display dialog "Setup complete!\n\nPlease refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option.\n\n- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', and enter your Dexcom credentials.\n- If you have any issues, see the README for troubleshooting." with title "Dexcom xbar Plugin Installer" buttons {"OK"} default button "OK"
+  display dialog "Setup complete!\n\nPlease refresh xbar by clicking the xbar icon in the menu bar or using the 'Refresh All' option.\n\n- Please left-click the Dexcom plugin in your menu bar, choose 'xbar' > 'Open Plugin', enter your Dexcom credentials and acknowledge the disclaimer.\n- If you have any issues, see the README for troubleshooting." with title "Dexcom xbar Plugin Installer" buttons {"OK"} default button "OK"
 EOD
