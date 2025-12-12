@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "src": "dexcom.5m.py",
+      "dest": "~/Library/Application Support/xbar/plugins/dexcom.5m.py",
+      "mode": "755"
+    },
+    {
+      "src": "dexcom_updater.py",
+      "dest": "~/.config/dexcom_plugin/dexcom_updater.py",
+      "mode": "755"
+    }
+  ]
+}

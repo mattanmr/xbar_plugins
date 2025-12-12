@@ -313,13 +313,19 @@ def check_and_display_updates():
     
     try:
         config_mgr = ConfigManager(CONFIG_FILE, UPDATE_LOG)
-        checker = UpdateChecker(GITHUB_API_URL, UPDATE_LOG)
+        cfg = config_mgr.load()
+        checker = UpdateChecker(cfg.get("version_url", ""), UPDATE_LOG)
         
-        if checker.should_check_for_update(config_mgr.get_last_check(), UPDATE_CHECK_INTERVAL):
-            available, latest_version, release_url = checker.check_for_update(VERSION)
+        if checker.should_check_for_update(cfg.get("last_check_ts", 0), UPDATE_CHECK_INTERVAL):
+            # mark check
+            cfg["last_check_ts"] = int(datetime.now().timestamp())
+            config_mgr.save(cfg)
+            available, remote_version = checker.check_for_update(cfg.get("current_version", VERSION))
             if available:
-                print(f"Update available: {latest_version} | color=orange")
-                print(f"Click to update | href='open {release_url}'")
+                print(f"Update available: {cfg.get('current_version', VERSION)} → {remote_version} | color=orange")
+                print(f"Update now | bash='{sys.executable} {PLUGIN_FILE} update' terminal=false refresh=true")
+            else:
+                print(f"No updates available | color=gray size=10")
     except Exception as e:
         if verbose:
             print(f"Warning: Update check failed: {str(e)} | color=yellow size=10")
@@ -332,16 +338,17 @@ def handle_update_command():
     
     try:
         config_mgr = ConfigManager(CONFIG_FILE, UPDATE_LOG)
-        checker = UpdateChecker(GITHUB_API_URL, UPDATE_LOG)
+        cfg = config_mgr.load()
         installer = UpdateInstaller(CONFIG_DIR, PLUGINS_DIR, BACKUP_DIR, UPDATE_LOG)
         dep_mgr = DependencyManager(UPDATE_LOG)
-        
-        available, latest_version, release_url = checker.check_for_update(VERSION)
-        if available:
-            print(f"Installing update {latest_version}...")
-            installer.install_update(latest_version, PLUGIN_FILE)
-            config_mgr.update_version(latest_version)
-            print(f"Update complete. Restart xbar to apply.")
+        dep_mgr.ensure_dependencies(cfg.get("dependencies", {}))
+        print("Installing update from manifest...")
+        installer.install_from_manifest(cfg.get("repo", "mattanmr/xbar_plugins"), cfg.get("source_ref", "update_process"), cfg.get("manifest_url", ""))
+        cfg["backup_version"] = cfg.get("current_version")
+        cfg["current_version"] = VERSION
+        cfg["first_run_after_update"] = True
+        config_mgr.save(cfg)
+        print("Update complete. Refresh xbar to apply.")
     except Exception as e:
         print(f"Update failed: {str(e)}")
 

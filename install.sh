@@ -88,10 +88,14 @@ if [ ! -f "$CONFIG_FILE" ]; then
     echo "Creating initial config.json..."
     cat > "$CONFIG_FILE" << 'EOF'
 {
-  "version": "2.0.0",
-  "last_check": 0,
+  "current_version": "2.0.0",
+  "last_check_ts": 0,
   "first_run_after_update": false,
   "backup_version": null,
+  "repo": "mattanmr/xbar_plugins",
+  "source_ref": "update_process",
+  "manifest_url": "https://raw.githubusercontent.com/mattanmr/xbar_plugins/update_process/update_manifest.json",
+  "version_url": "https://raw.githubusercontent.com/mattanmr/xbar_plugins/update_process/VERSION",
   "dependencies": {
     "pip": ["pydexcom"],
     "homebrew": ["gnuplot"]
